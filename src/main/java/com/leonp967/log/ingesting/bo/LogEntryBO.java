@@ -1,16 +1,13 @@
-package com.leonp967.log.ingesting.model;
+package com.leonp967.log.ingesting.bo;
 
-import io.quarkus.runtime.annotations.RegisterForReflection;
+import com.leonp967.log.ingesting.model.RegionEnum;
 
-import java.util.Objects;
-
-@RegisterForReflection
-public class LogEntry {
+public class LogEntryBO {
 
     private String url;
     private Long accessTimestamp;
     private String userUuid;
-    private Integer region;
+    private RegionEnum region;
 
     public static Builder builder() {
         return new Builder();
@@ -40,50 +37,34 @@ public class LogEntry {
         this.userUuid = userUuid;
     }
 
-    public Integer getRegion() {
+    public RegionEnum getRegion() {
         return region;
     }
 
-    public void setRegion(Integer region) {
+    public void setRegion(RegionEnum region) {
         this.region = region;
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        LogEntry logEntry = (LogEntry) o;
-        return Objects.equals(url, logEntry.url) &&
-                Objects.equals(accessTimestamp, logEntry.accessTimestamp) &&
-                Objects.equals(userUuid, logEntry.userUuid) &&
-                Objects.equals(region, logEntry.region);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(url, accessTimestamp, userUuid, region);
-    }
-
-    @Override
     public String toString() {
-        return "LogEntry{" +
+        return "LogEntryBO{" +
                 "url='" + url + '\'' +
                 ", accessTimestamp=" + accessTimestamp +
                 ", userUuid='" + userUuid + '\'' +
-                ", region='" + region + '\'' +
+                ", region=" + region +
                 '}';
     }
 
     public static final class Builder {
         private String url;
-        private Long timestamp;
+        private Long accessTimestamp;
         private String userUuid;
-        private Integer region;
+        private RegionEnum region;
 
         private Builder() {
         }
 
-        public static Builder aLogEntry() {
+        public static Builder aLogEntryBO() {
             return new Builder();
         }
 
@@ -92,8 +73,8 @@ public class LogEntry {
             return this;
         }
 
-        public Builder timestamp(Long timestamp) {
-            this.timestamp = timestamp;
+        public Builder accessTimestamp(Long accessTimestamp) {
+            this.accessTimestamp = accessTimestamp;
             return this;
         }
 
@@ -102,18 +83,18 @@ public class LogEntry {
             return this;
         }
 
-        public Builder region(Integer region) {
+        public Builder region(RegionEnum region) {
             this.region = region;
             return this;
         }
 
-        public LogEntry build() {
-            LogEntry logEntry = new LogEntry();
-            logEntry.setUrl(url);
-            logEntry.setAccessTimestamp(timestamp);
-            logEntry.setUserUuid(userUuid);
-            logEntry.setRegion(region);
-            return logEntry;
+        public LogEntryBO build() {
+            LogEntryBO logEntryBO = new LogEntryBO();
+            logEntryBO.setUrl(url);
+            logEntryBO.setAccessTimestamp(accessTimestamp);
+            logEntryBO.setUserUuid(userUuid);
+            logEntryBO.setRegion(region);
+            return logEntryBO;
         }
     }
 }
