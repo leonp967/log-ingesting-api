@@ -2,8 +2,11 @@ package com.leonp967.log.ingesting.service;
 
 import com.leonp967.log.ingesting.bo.LogEntryBO;
 import com.leonp967.log.ingesting.bo.MetricsBO;
+import com.leonp967.log.ingesting.model.MetricsFilter;
 import com.leonp967.log.ingesting.model.TimeTypeEnum;
 import com.leonp967.log.ingesting.repository.LogAnalyticsRepository;
+import io.quarkus.cache.CacheInvalidateAll;
+import io.quarkus.cache.CacheResult;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.client.WebClient;
@@ -12,11 +15,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import java.io.IOException;
+import javax.inject.Singleton;
 
-@ApplicationScoped
+@Singleton
 public class LogAnalyticsService {
 
     private final Vertx vertx;
@@ -36,6 +37,7 @@ public class LogAnalyticsService {
                         .setDefaultPort(8080));
     }
 
+    @CacheInvalidateAll(cacheName = "metrics")
     public void ingestLog(LogEntryBO logEntry) {
         webClient.post("")
                 .sendJson(logEntry, result -> {
@@ -47,7 +49,9 @@ public class LogAnalyticsService {
                 });
     }
 
-    public Uni<MetricsBO> evaluateMetrics(Integer timeValue, TimeTypeEnum timeType) throws IOException {
-        return repository.evaluateAllMetrics(timeValue, timeType);
+    @CacheResult(cacheName = "metrics")
+    public Uni<MetricsBO> evaluateMetrics(MetricsFilter metricsFilter) {
+        return repository.evaluateAllMetrics(metricsFilter.getTimeValue(),
+                TimeTypeEnum.fromCode(metricsFilter.getTimeType()));
     }
 }

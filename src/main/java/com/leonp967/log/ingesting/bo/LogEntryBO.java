@@ -7,7 +7,7 @@ public class LogEntryBO {
     private String url;
     private Long accessTimestamp;
     private String userUuid;
-    private RegionEnum region;
+    private String region;
 
     public static Builder builder() {
         return new Builder();
@@ -37,11 +37,11 @@ public class LogEntryBO {
         this.userUuid = userUuid;
     }
 
-    public RegionEnum getRegion() {
+    public String getRegion() {
         return region;
     }
 
-    public void setRegion(RegionEnum region) {
+    public void setRegion(String region) {
         this.region = region;
     }
 
@@ -59,7 +59,7 @@ public class LogEntryBO {
         private String url;
         private Long accessTimestamp;
         private String userUuid;
-        private RegionEnum region;
+        private String region;
 
         private Builder() {
         }
@@ -83,7 +83,7 @@ public class LogEntryBO {
             return this;
         }
 
-        public Builder region(RegionEnum region) {
+        public Builder region(String region) {
             this.region = region;
             return this;
         }

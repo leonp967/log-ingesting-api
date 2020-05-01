@@ -15,6 +15,6 @@ public enum TimeTypeEnum {
     }
 
     public static TimeTypeEnum fromCode(String code) {
-        return Arrays.stream(values()).filter(region -> region.code.equals(code)).findFirst().orElse(null);
+        return Arrays.stream(values()).filter(region -> region.code.equalsIgnoreCase(code)).findFirst().orElse(null);
     }
 }

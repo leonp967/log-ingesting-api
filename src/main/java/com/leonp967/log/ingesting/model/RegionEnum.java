@@ -22,4 +22,8 @@ public enum RegionEnum {
     public static RegionEnum fromCode(Integer code) {
         return Arrays.stream(values()).filter(region -> region.code.equals(code)).findFirst().orElse(null);
     }
+
+    public String getDescription() {
+        return description;
+    }
 }
