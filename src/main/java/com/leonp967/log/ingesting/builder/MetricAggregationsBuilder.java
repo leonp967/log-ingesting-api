@@ -18,7 +18,7 @@ public class MetricAggregationsBuilder {
     }
 
     public AggregationBuilder buildTopUrlsByRegionAggregation() {
-        org.elasticsearch.search.aggregations.AggregationBuilder topUrl = AggregationBuilders.terms("top_urls")
+        AggregationBuilder topUrl = AggregationBuilders.terms("top_urls")
                 .field("url.keyword")
                 .size(3);
 
@@ -52,7 +52,7 @@ public class MetricAggregationsBuilder {
 
         return AggregationBuilders.terms("time")
                 .field(fieldName)
-                .includeExclude(new IncludeExclude(timeValue.toString(), ""))
+                .includeExclude(new IncludeExclude(timeValue, ""))
                 .subAggregation(topUrl);
     }
 
