@@ -6,7 +6,8 @@ public enum TimeTypeEnum {
 
     DAY("D"),
     WEEK("W"),
-    YEAR("Y");
+    YEAR("Y"),
+    UNKNOWN("0");
 
     String code;
 
@@ -15,6 +16,7 @@ public enum TimeTypeEnum {
     }
 
     public static TimeTypeEnum fromCode(String code) {
-        return Arrays.stream(values()).filter(region -> region.code.equalsIgnoreCase(code)).findFirst().orElse(null);
+        return Arrays.stream(values()).filter(region ->
+                region.code.equalsIgnoreCase(code)).findFirst().orElse(UNKNOWN);
     }
 }

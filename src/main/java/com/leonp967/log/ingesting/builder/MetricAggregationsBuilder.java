@@ -40,14 +40,18 @@ public class MetricAggregationsBuilder {
                 .size(3);
 
         String fieldName;
-        if (timeType == TimeTypeEnum.DAY) {
-            fieldName = "day.keyword";
-        } else if (timeType == TimeTypeEnum.WEEK) {
-            fieldName = "week.keyword";
-        } else if (timeType == TimeTypeEnum.YEAR) {
-            fieldName = "year.keyword";
-        } else {
-            throw new IllegalArgumentException("The timeType argument is invalid!");
+        switch (timeType) {
+            case DAY:
+                fieldName = "day.keyword";
+                break;
+            case WEEK:
+                fieldName = "week.keyword";
+                break;
+            case YEAR:
+                fieldName = "year.keyword";
+                break;
+            default:
+                throw new IllegalArgumentException("The timeType argument is invalid!");
         }
 
         return AggregationBuilders.terms("time")

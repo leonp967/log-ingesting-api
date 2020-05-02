@@ -26,8 +26,10 @@ public class LogAnalyticsResource {
 
     @GET
     @Path("/health")
-    public Response health() {
-        return Response.ok().build();
+    public Uni<Response> health() {
+        return service.healthCheck()
+                .onItem()
+                .apply(status -> Response.status(status).build());
     }
 
     @GET
@@ -41,8 +43,14 @@ public class LogAnalyticsResource {
 
     @POST
     @Path("/ingest")
-    public Response ingest(LogEntry logEntry) {
-        service.ingestLog(converter.toBO(logEntry));
-        return Response.ok().build();
+    public Uni<Response> ingest(LogEntry logEntry) {
+        return service.ingestLog(converter.toBO(logEntry))
+                .onItem().apply(status -> {
+                    if (status == Response.Status.OK) {
+                        return Response.status(Response.Status.CREATED).build();
+                    } else {
+                        return Response.status(Response.Status.BAD_REQUEST).build();
+                    }
+                });
     }
 }

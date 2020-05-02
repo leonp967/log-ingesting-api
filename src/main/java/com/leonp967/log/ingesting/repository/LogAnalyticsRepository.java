@@ -7,12 +7,16 @@ import com.leonp967.log.ingesting.builder.MetricAggregationsBuilder;
 import com.leonp967.log.ingesting.model.TimeTypeEnum;
 import io.smallrye.mutiny.Uni;
 import org.apache.http.HttpHost;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -21,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Singleton;
+import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -32,6 +37,15 @@ public class LogAnalyticsRepository {
     private final MetricAggregationsBuilder aggregationsBuilder;
     private final Logger LOGGER = LoggerFactory.getLogger(LogAnalyticsRepository.class);
 
+    @ConfigProperty(name = "elasticsearch.url")
+    String elasticSearchUrl;
+
+    @ConfigProperty(name = "elasticsearch.scheme")
+    String elasticSearchScheme;
+
+    @ConfigProperty(name = "elasticsearch.port")
+    Integer elasticSearchPort;
+
     public LogAnalyticsRepository(MetricAggregationsBuilder aggregationsBuilder) {
         this.aggregationsBuilder = aggregationsBuilder;
     }
@@ -40,7 +54,7 @@ public class LogAnalyticsRepository {
     public void initialize() {
         elasticClient = new RestHighLevelClient(
                 RestClient.builder(
-                        new HttpHost("localhost", 9200, "http")));
+                        new HttpHost(elasticSearchUrl, elasticSearchPort, elasticSearchScheme)));
     }
 
     private List<MetricEntryBO> handleSimpleAggregation(List<? extends Terms.Bucket> buckets) {
@@ -176,15 +190,39 @@ public class LogAnalyticsRepository {
     }
 
     public Uni<MetricsBO> evaluateAllMetrics(String timeValue, TimeTypeEnum timeType) {
-
         return Uni.combine().all().unis(getBottomUrl(), getMostAccessedMinute(),
                 getTopUrlsByRegion(), getTopUrls(), getTopUrlsByTime(timeValue, timeType))
-                .asTuple().onItem().apply(tuple -> MetricsBO.builder()
+                .asTuple().onItem()
+                .apply(tuple -> MetricsBO.builder()
                         .bottomUrl(tuple.getItem1())
                         .mostAccessedMinute(tuple.getItem2())
                         .topUrlsByRegion(tuple.getItem3())
                         .topUrls(tuple.getItem4())
                         .topUrlsByTime(tuple.getItem5())
                         .build());
+    }
+
+    public Uni<Response.Status> healthCheck() {
+        return Uni.createFrom().emitter(uniEmitter ->
+            elasticClient.cluster().healthAsync(new ClusterHealthRequest(), RequestOptions.DEFAULT,
+                    new ActionListener<ClusterHealthResponse>() {
+                        @Override
+                        public void onResponse(ClusterHealthResponse clusterHealthResponse) {
+                            if (clusterHealthResponse.isTimedOut()) {
+                                uniEmitter.complete(Response.Status.REQUEST_TIMEOUT);
+                            } else {
+                                LOGGER.info("Elasticsearch health check status [{}]", clusterHealthResponse.getStatus());
+                                uniEmitter.complete(clusterHealthResponse.getStatus() != ClusterHealthStatus.RED ?
+                                        Response.Status.OK : Response.Status.SERVICE_UNAVAILABLE);
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            LOGGER.error("Elastic Search health check failed!", e);
+                            uniEmitter.complete(Response.Status.INTERNAL_SERVER_ERROR);
+                        }
+                    })
+        );
     }
 }
