@@ -88,7 +88,7 @@ public class LogAnalyticsRepository {
         return searchRequest;
     }
 
-    private void search(SearchRequest request, ActionListener<SearchResponse> listener)  {
+    public void search(SearchRequest request, ActionListener<SearchResponse> listener)  {
         elasticClient.searchAsync(request, RequestOptions.DEFAULT, listener);
     }
 
@@ -240,5 +240,9 @@ public class LogAnalyticsRepository {
                         }
                     })
         );
+    }
+
+    public void health(ActionListener<ClusterHealthResponse> listener) {
+        elasticClient.cluster().healthAsync(new ClusterHealthRequest(), RequestOptions.DEFAULT, listener);
     }
 }
