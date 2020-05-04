@@ -1,15 +1,13 @@
 package com.leonp967.log.ingesting.model;
 
-import io.quarkus.runtime.annotations.RegisterForReflection;
-
-import javax.json.bind.annotation.JsonbCreator;
 import java.util.Arrays;
 
 public enum RegionEnum {
 
     US_EAST("us-east-1", 1),
     US_WEST("us-west-2", 2),
-    AP_SOUTH("ap-south-1", 3);
+    AP_SOUTH("ap-south-1", 3),
+    UNKNOW("unknown", -1);
 
     String description;
     Integer code;
@@ -20,7 +18,7 @@ public enum RegionEnum {
     }
 
     public static RegionEnum fromCode(Integer code) {
-        return Arrays.stream(values()).filter(region -> region.code.equals(code)).findFirst().orElse(null);
+        return Arrays.stream(values()).filter(region -> region.code.equals(code)).findFirst().orElse(UNKNOW);
     }
 
     public String getDescription() {

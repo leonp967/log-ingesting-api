@@ -2,6 +2,9 @@ package com.leonp967.log.ingesting.dto;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
+import java.util.Objects;
+import java.util.StringJoiner;
+
 @RegisterForReflection
 public class MetricEntryDTO {
 
@@ -26,6 +29,30 @@ public class MetricEntryDTO {
 
     public void setCount(Long count) {
         this.count = count;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MetricEntryDTO that = (MetricEntryDTO) o;
+
+        return Objects.equals(this.count, that.count) &&
+                Objects.equals(this.key, that.key);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(count, key);
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", this.getClass().getSimpleName() + "[", "]")
+                .add("count = " + count)
+                .add("key = " + key)
+                .toString();
     }
 
     public static final class Builder {

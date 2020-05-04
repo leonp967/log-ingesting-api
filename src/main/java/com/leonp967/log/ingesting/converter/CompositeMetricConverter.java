@@ -1,4 +1,4 @@
-package com.leonp967.log.ingesting.dto.converter;
+package com.leonp967.log.ingesting.converter;
 
 import com.leonp967.log.ingesting.bo.CompositeMetricBO;
 import com.leonp967.log.ingesting.bo.MetricEntryBO;
@@ -19,6 +19,10 @@ public class CompositeMetricConverter {
     }
 
     public CompositeMetricDTO toDTO(CompositeMetricBO compositeMetricBO) {
+        if (compositeMetricBO == null) {
+            throw new IllegalArgumentException("CompositeMetricBO cannot be null when converting to CompositeMetricDTO!");
+        }
+
         return CompositeMetricDTO.builder()
                 .key(compositeMetricBO.getKey())
                 .values(convertList(compositeMetricBO.getValues()))
@@ -26,6 +30,10 @@ public class CompositeMetricConverter {
     }
 
     private List<MetricEntryDTO> convertList(List<MetricEntryBO> metricEntryBOs) {
+        if (metricEntryBOs == null) {
+            throw new IllegalArgumentException("List<MetricEntryBO> cannot be null when converting to CompositeMetricDTO!");
+        }
+
         return metricEntryBOs.stream()
                 .map(metricEntryConverter::toDTO)
                 .collect(Collectors.toList());

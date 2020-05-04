@@ -1,6 +1,7 @@
 package com.leonp967.log.ingesting.bo;
 
-import com.leonp967.log.ingesting.model.RegionEnum;
+import java.util.Objects;
+import java.util.StringJoiner;
 
 public class LogEntryBO {
 
@@ -47,13 +48,32 @@ public class LogEntryBO {
 
     @Override
     public String toString() {
-        return "LogEntryBO{" +
-                "url='" + url + '\'' +
-                ", accessTimestamp=" + accessTimestamp +
-                ", userUuid='" + userUuid + '\'' +
-                ", region=" + region +
-                '}';
+        return new StringJoiner(", ", this.getClass().getSimpleName() + "[", "]")
+                .add("accessTimestamp = " + accessTimestamp)
+                .add("region = " + region)
+                .add("url = " + url)
+                .add("userUuid = " + userUuid)
+                .toString();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        LogEntryBO that = (LogEntryBO) o;
+
+        return Objects.equals(this.accessTimestamp, that.accessTimestamp) &&
+                Objects.equals(this.region, that.region) &&
+                Objects.equals(this.url, that.url) &&
+                Objects.equals(this.userUuid, that.userUuid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(accessTimestamp, region, url, userUuid);
+    }
+
 
     public static final class Builder {
         private String url;

@@ -3,7 +3,7 @@ package com.leonp967.log.ingesting.repository;
 import com.leonp967.log.ingesting.bo.CompositeMetricBO;
 import com.leonp967.log.ingesting.bo.MetricEntryBO;
 import com.leonp967.log.ingesting.bo.MetricsBO;
-import com.leonp967.log.ingesting.builder.MetricAggregationsBuilder;
+import com.leonp967.log.ingesting.elasticsearch.aggregations.builder.MetricAggregationsBuilder;
 import com.leonp967.log.ingesting.model.TimeTypeEnum;
 import io.smallrye.mutiny.Uni;
 import org.apache.http.HttpHost;
@@ -29,6 +29,8 @@ import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static com.leonp967.log.ingesting.elasticsearch.aggregations.builder.MetricAggregationsBuilder.*;
 
 @Singleton
 public class LogAnalyticsRepository {
@@ -57,7 +59,7 @@ public class LogAnalyticsRepository {
                         new HttpHost(elasticSearchUrl, elasticSearchPort, elasticSearchScheme)));
     }
 
-    private List<MetricEntryBO> handleSimpleAggregation(List<? extends Terms.Bucket> buckets) {
+    public List<MetricEntryBO> handleSimpleAggregation(List<? extends Terms.Bucket> buckets) {
         return buckets.stream()
                 .map(bucket -> MetricEntryBO.builder()
                         .key(bucket.getKeyAsString())
@@ -66,22 +68,22 @@ public class LogAnalyticsRepository {
                 .collect(Collectors.toList());
     }
 
-    private List<CompositeMetricBO> handleCompositeAggregation(List<? extends Terms.Bucket> buckets) {
+    public List<CompositeMetricBO> handleCompositeAggregation(List<? extends Terms.Bucket> buckets) {
         return buckets.stream()
                 .map(bucket -> {
-                    Terms topUrlTerms = bucket.getAggregations().get("top_urls");
+                    Terms aggregation = bucket.getAggregations().get(TOP_URLS_AGGREGATION_NAME);
                     return CompositeMetricBO.builder()
                             .key(bucket.getKeyAsString())
-                            .values(handleSimpleAggregation(topUrlTerms.getBuckets()))
+                            .values(handleSimpleAggregation(aggregation.getBuckets()))
                             .build();
                 })
                 .collect(Collectors.toList());
     }
 
-    private SearchRequest buildSearchRequest(AggregationBuilder topUrlsAggregation) {
+    private SearchRequest buildSearchRequest(AggregationBuilder aggregation) {
         SearchRequest searchRequest = new SearchRequest();
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.aggregation(topUrlsAggregation);
+        searchSourceBuilder.aggregation(aggregation);
         searchRequest.source(searchSourceBuilder);
         return searchRequest;
     }
@@ -93,7 +95,7 @@ public class LogAnalyticsRepository {
                         elasticClient.searchAsync(request, RequestOptions.DEFAULT, new ActionListener<SearchResponse>() {
                     @Override
                     public void onResponse(SearchResponse response) {
-                        Terms topUrlsTerms = response.getAggregations().get("top_urls");
+                        Terms topUrlsTerms = response.getAggregations().get(TOP_URLS_AGGREGATION_NAME);
                         uniEmitter.complete(handleSimpleAggregation(topUrlsTerms.getBuckets()));
                     }
 
@@ -112,7 +114,7 @@ public class LogAnalyticsRepository {
                         elasticClient.searchAsync(request, RequestOptions.DEFAULT, new ActionListener<SearchResponse>() {
                             @Override
                             public void onResponse(SearchResponse response) {
-                                Terms topUrlsByRegionTerms = response.getAggregations().get("regions");
+                                Terms topUrlsByRegionTerms = response.getAggregations().get(TOP_REGIONS_AGGREGATION_NAME);
                                 uniEmitter.complete(handleCompositeAggregation(topUrlsByRegionTerms.getBuckets()));
                             }
 
@@ -131,12 +133,17 @@ public class LogAnalyticsRepository {
                         elasticClient.searchAsync(request, RequestOptions.DEFAULT, new ActionListener<SearchResponse>() {
                             @Override
                             public void onResponse(SearchResponse response) {
-                                Terms bottomUrlTerms = response.getAggregations().get("bottom_url");
-                                MetricEntryBO metricEntryBO = MetricEntryBO.builder()
-                                        .key(bottomUrlTerms.getBuckets().get(0).getKeyAsString())
-                                        .count(bottomUrlTerms.getBuckets().get(0).getDocCount())
-                                        .build();
-                                uniEmitter.complete(metricEntryBO);
+                                Terms bottomUrlTerms = response.getAggregations().get(BOTTOM_URL_AGGREGATION_NAME);
+
+                                if (!bottomUrlTerms.getBuckets().isEmpty()) {
+                                    MetricEntryBO metricEntryBO = MetricEntryBO.builder()
+                                            .key(bottomUrlTerms.getBuckets().get(0).getKeyAsString())
+                                            .count(bottomUrlTerms.getBuckets().get(0).getDocCount())
+                                            .build();
+                                    uniEmitter.complete(metricEntryBO);
+                                } else {
+                                    uniEmitter.complete(MetricEntryBO.builder().build());
+                                }
                             }
 
                             @Override
@@ -154,7 +161,7 @@ public class LogAnalyticsRepository {
                         elasticClient.searchAsync(request, RequestOptions.DEFAULT, new ActionListener<SearchResponse>() {
                             @Override
                             public void onResponse(SearchResponse response) {
-                                Terms topUrlsByTimeTerms = response.getAggregations().get("time");
+                                Terms topUrlsByTimeTerms = response.getAggregations().get(TIME_AGGREGATION_NAME);
                                 uniEmitter.complete(handleCompositeAggregation(topUrlsByTimeTerms.getBuckets()));
                             }
 
@@ -166,19 +173,28 @@ public class LogAnalyticsRepository {
                         }));
     }
 
+    public void search(SearchRequest request, ActionListener<SearchResponse> listener)  {
+        elasticClient.searchAsync(request, RequestOptions.DEFAULT, listener);
+    }
+
     public Uni<MetricEntryBO> getMostAccessedMinute() {
         return Uni.createFrom().item(aggregationsBuilder.buildMostAccessedMinuteAggregation())
                 .onItem().apply(this::buildSearchRequest)
                 .onItem().produceUni((request, uniEmitter) ->
-                        elasticClient.searchAsync(request, RequestOptions.DEFAULT, new ActionListener<SearchResponse>() {
+                        search(request, new ActionListener<SearchResponse>() {
                     @Override
                     public void onResponse(SearchResponse response) {
-                        Terms bottomUrlTerms = response.getAggregations().get("top_minute");
-                        MetricEntryBO metricEntryBO = MetricEntryBO.builder()
-                                .key(bottomUrlTerms.getBuckets().get(0).getKeyAsString())
-                                .count(bottomUrlTerms.getBuckets().get(0).getDocCount())
-                                .build();
-                        uniEmitter.complete(metricEntryBO);
+                        Terms bottomUrlTerms = response.getAggregations().get(TOP_MINUTE_AGGREGATION_NAME);
+
+                        if (!bottomUrlTerms.getBuckets().isEmpty()) {
+                            MetricEntryBO metricEntryBO = MetricEntryBO.builder()
+                                    .key(bottomUrlTerms.getBuckets().get(0).getKeyAsString())
+                                    .count(bottomUrlTerms.getBuckets().get(0).getDocCount())
+                                    .build();
+                            uniEmitter.complete(metricEntryBO);
+                        } else {
+                            uniEmitter.complete(MetricEntryBO.builder().build());
+                        }
                     }
 
                     @Override
@@ -202,10 +218,13 @@ public class LogAnalyticsRepository {
                         .build());
     }
 
+    public void health(ActionListener<ClusterHealthResponse> listener) {
+        elasticClient.cluster().healthAsync(new ClusterHealthRequest(), RequestOptions.DEFAULT, listener);
+    }
+
     public Uni<Response.Status> healthCheck() {
         return Uni.createFrom().emitter(uniEmitter ->
-            elasticClient.cluster().healthAsync(new ClusterHealthRequest(), RequestOptions.DEFAULT,
-                    new ActionListener<ClusterHealthResponse>() {
+            health(new ActionListener<ClusterHealthResponse>() {
                         @Override
                         public void onResponse(ClusterHealthResponse clusterHealthResponse) {
                             if (clusterHealthResponse.isTimedOut()) {

@@ -1,6 +1,8 @@
 package com.leonp967.log.ingesting.bo;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.StringJoiner;
 
 public class CompositeMetricBO {
 
@@ -25,6 +27,30 @@ public class CompositeMetricBO {
 
     public void setValues(List<MetricEntryBO> values) {
         this.values = values;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        CompositeMetricBO that = (CompositeMetricBO) o;
+
+        return Objects.equals(this.key, that.key) &&
+                Objects.equals(this.values, that.values);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(key, values);
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", this.getClass().getSimpleName() + "[", "]")
+                .add("key = " + key)
+                .add("values = " + values)
+                .toString();
     }
 
     public static final class Builder {

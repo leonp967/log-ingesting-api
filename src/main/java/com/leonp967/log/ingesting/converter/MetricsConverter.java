@@ -1,4 +1,4 @@
-package com.leonp967.log.ingesting.dto.converter;
+package com.leonp967.log.ingesting.converter;
 
 import com.leonp967.log.ingesting.bo.CompositeMetricBO;
 import com.leonp967.log.ingesting.bo.MetricEntryBO;
@@ -23,6 +23,10 @@ public class MetricsConverter {
     }
 
     public MetricsDTO toDTO(MetricsBO metricsBO) {
+        if (metricsBO == null) {
+            throw new IllegalArgumentException("MetricsBO cannot be null when converting to MetricsDTO!");
+        }
+
         return MetricsDTO.builder()
                 .bottomUrl(metricEntryConverter.toDTO(metricsBO.getBottomUrl()))
                 .mostAccessedMinute(metricEntryConverter.toDTO(metricsBO.getMostAccessedMinute()))
@@ -33,12 +37,20 @@ public class MetricsConverter {
     }
 
     private List<CompositeMetricDTO> convertCompositeMetricList(List<CompositeMetricBO> compositeMetricBOs) {
+        if (compositeMetricBOs == null) {
+            throw new IllegalArgumentException("List<CompositeMetricBO> cannot be null when converting to MetricsDTO!");
+        }
+
         return compositeMetricBOs.stream()
                 .map(compositeMetricConverter::toDTO)
                 .collect(Collectors.toList());
     }
 
     private List<MetricEntryDTO> convertMetricEntryList(List<MetricEntryBO> metricEntryBOs) {
+        if (metricEntryBOs == null) {
+            throw new IllegalArgumentException("List<MetricEntryBO> cannot be null when converting to MetricsDTO!");
+        }
+
         return metricEntryBOs.stream()
                 .map(metricEntryConverter::toDTO)
                 .collect(Collectors.toList());

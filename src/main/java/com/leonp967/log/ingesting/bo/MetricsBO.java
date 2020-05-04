@@ -1,8 +1,8 @@
 package com.leonp967.log.ingesting.bo;
 
-import io.quarkus.runtime.annotations.RegisterForReflection;
-
 import java.util.List;
+import java.util.Objects;
+import java.util.StringJoiner;
 
 public class MetricsBO {
 
@@ -54,6 +54,36 @@ public class MetricsBO {
 
     public void setMostAccessedMinute(MetricEntryBO mostAccessedMinute) {
         this.mostAccessedMinute = mostAccessedMinute;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MetricsBO that = (MetricsBO) o;
+
+        return Objects.equals(this.bottomUrl, that.bottomUrl) &&
+                Objects.equals(this.mostAccessedMinute, that.mostAccessedMinute) &&
+                Objects.equals(this.topUrls, that.topUrls) &&
+                Objects.equals(this.topUrlsByRegion, that.topUrlsByRegion) &&
+                Objects.equals(this.topUrlsByTime, that.topUrlsByTime);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(bottomUrl, mostAccessedMinute, topUrls, topUrlsByRegion, topUrlsByTime);
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", this.getClass().getSimpleName() + "[", "]")
+                .add("bottomUrl = " + bottomUrl)
+                .add("mostAccessedMinute = " + mostAccessedMinute)
+                .add("topUrls = " + topUrls)
+                .add("topUrlsByRegion = " + topUrlsByRegion)
+                .add("topUrlsByTime = " + topUrlsByTime)
+                .toString();
     }
 
     public static final class Builder {
