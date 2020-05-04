@@ -7,7 +7,7 @@ public enum RegionEnum {
     US_EAST("us-east-1", 1),
     US_WEST("us-west-2", 2),
     AP_SOUTH("ap-south-1", 3),
-    UNKNOW("unknown", -1);
+    UNKNOWN("unknown", -1);
 
     String description;
     Integer code;
@@ -18,7 +18,7 @@ public enum RegionEnum {
     }
 
     public static RegionEnum fromCode(Integer code) {
-        return Arrays.stream(values()).filter(region -> region.code.equals(code)).findFirst().orElse(UNKNOW);
+        return Arrays.stream(values()).filter(region -> region.code.equals(code)).findFirst().orElse(UNKNOWN);
     }
 
     public String getDescription() {
