@@ -88,11 +88,15 @@ public class LogAnalyticsRepository {
         return searchRequest;
     }
 
+    private void search(SearchRequest request, ActionListener<SearchResponse> listener)  {
+        elasticClient.searchAsync(request, RequestOptions.DEFAULT, listener);
+    }
+
     public Uni<List<MetricEntryBO>> getTopUrls() {
         return Uni.createFrom().item(aggregationsBuilder.buildTopUrlsAggregation())
                 .onItem().apply(this::buildSearchRequest)
                 .onItem().produceUni((request, uniEmitter) ->
-                        elasticClient.searchAsync(request, RequestOptions.DEFAULT, new ActionListener<SearchResponse>() {
+                        search(request, new ActionListener<SearchResponse>() {
                     @Override
                     public void onResponse(SearchResponse response) {
                         Terms topUrlsTerms = response.getAggregations().get(TOP_URLS_AGGREGATION_NAME);
@@ -111,7 +115,7 @@ public class LogAnalyticsRepository {
         return Uni.createFrom().item(aggregationsBuilder.buildTopUrlsByRegionAggregation())
                 .onItem().apply(this::buildSearchRequest)
                 .onItem().produceUni((request, uniEmitter) ->
-                        elasticClient.searchAsync(request, RequestOptions.DEFAULT, new ActionListener<SearchResponse>() {
+                        search(request, new ActionListener<SearchResponse>() {
                             @Override
                             public void onResponse(SearchResponse response) {
                                 Terms topUrlsByRegionTerms = response.getAggregations().get(TOP_REGIONS_AGGREGATION_NAME);
@@ -130,7 +134,7 @@ public class LogAnalyticsRepository {
         return Uni.createFrom().item(aggregationsBuilder.buildBottomUrlAggregation())
                 .onItem().apply(this::buildSearchRequest)
                 .onItem().produceUni((request, uniEmitter) ->
-                        elasticClient.searchAsync(request, RequestOptions.DEFAULT, new ActionListener<SearchResponse>() {
+                        search(request, new ActionListener<SearchResponse>() {
                             @Override
                             public void onResponse(SearchResponse response) {
                                 Terms bottomUrlTerms = response.getAggregations().get(BOTTOM_URL_AGGREGATION_NAME);
@@ -158,7 +162,7 @@ public class LogAnalyticsRepository {
         return Uni.createFrom().item(aggregationsBuilder.buildTopUrlsByTimeAggregation(timeValue, timeType))
                 .onItem().apply(this::buildSearchRequest)
                 .onItem().produceUni((request, uniEmitter) ->
-                        elasticClient.searchAsync(request, RequestOptions.DEFAULT, new ActionListener<SearchResponse>() {
+                        search(request, new ActionListener<SearchResponse>() {
                             @Override
                             public void onResponse(SearchResponse response) {
                                 Terms topUrlsByTimeTerms = response.getAggregations().get(TIME_AGGREGATION_NAME);
@@ -171,10 +175,6 @@ public class LogAnalyticsRepository {
                                 uniEmitter.complete(new ArrayList<>());
                             }
                         }));
-    }
-
-    public void search(SearchRequest request, ActionListener<SearchResponse> listener)  {
-        elasticClient.searchAsync(request, RequestOptions.DEFAULT, listener);
     }
 
     public Uni<MetricEntryBO> getMostAccessedMinute() {
@@ -218,13 +218,10 @@ public class LogAnalyticsRepository {
                         .build());
     }
 
-    public void health(ActionListener<ClusterHealthResponse> listener) {
-        elasticClient.cluster().healthAsync(new ClusterHealthRequest(), RequestOptions.DEFAULT, listener);
-    }
-
     public Uni<Response.Status> healthCheck() {
         return Uni.createFrom().emitter(uniEmitter ->
-            health(new ActionListener<ClusterHealthResponse>() {
+                elasticClient.cluster().healthAsync(new ClusterHealthRequest(), RequestOptions.DEFAULT,
+                        new ActionListener<ClusterHealthResponse>() {
                         @Override
                         public void onResponse(ClusterHealthResponse clusterHealthResponse) {
                             if (clusterHealthResponse.isTimedOut()) {
