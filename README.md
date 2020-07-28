@@ -1,5 +1,5 @@
 # Log Access Analytics
-Foi utilizado o Logstash em conjunto com o Elasticsearch para realizar o tratamento, armazenamento e métricas dos logs. Quando o serviço recebe um log via REST, este é salvo no Logstash, que realiza o tratamento do timestamp para extrair a semana do ano, dia do mês, ano e minuto em que o log ocorreu. Após o tratamento isto é enviado para o Elasticsearch para ser indexado. E no momento de gerar métricas, foram utilizados os Terms Aggregations do Elasticsearch.
+Foi utilizado o Logstash em conjunto com o Elasticsearch para realizar o tratamento, armazenamento e métricas dos logs. O framework utilizado na API foi o Quarkus. Quando o serviço recebe um log via REST, este é salvo no Logstash, que realiza o tratamento do timestamp para extrair a semana do ano, dia do mês, ano e minuto em que o log ocorreu. Após o tratamento isto é enviado para o Elasticsearch para ser indexado. E no momento de gerar métricas, foram utilizados os Terms Aggregations do Elasticsearch.
 
 ## Configuração utilizada no Logstash
 ```
